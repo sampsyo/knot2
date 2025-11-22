@@ -2,8 +2,8 @@ use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::fs;
 
-const TMPL_DIR: &'static str = "templates";
-const NOTE_TEMPLATE: &'static str = "note.html";
+const TMPL_DIR: &str = "templates";
+const NOTE_TEMPLATE: &str = "note.html";
 
 struct Context {
     src_dir: Utf8PathBuf,
@@ -44,7 +44,7 @@ impl Context {
         if ext != "md" {
             return None;
         }
-        Some(self.dest_dir.join(format!("{}.html", base)))
+        Some(self.dest_dir.join(format!("{base}.html")))
     }
 
     fn render_note(&self, src_path: &Utf8Path, dest_path: &Utf8Path) -> Result<()> {
