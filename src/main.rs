@@ -75,7 +75,10 @@ impl Context {
         for entry in self.src_dir.read_dir_utf8()? {
             let entry = entry?;
             if let Some(dest_path) = self.note_dest(entry.file_name()) {
-                self.render_note(entry.path(), &dest_path)?;
+                match self.render_note(entry.path(), &dest_path) {
+                    Ok(_) => (),
+                    Err(e) => eprintln!("error rendering note {}: {}", entry.file_name(), e),
+                }
             }
         }
         Ok(())
