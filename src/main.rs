@@ -11,20 +11,45 @@ struct Context {
     tmpls: minijinja::Environment<'static>,
 }
 
+fn load_template(name: &str) -> std::result::Result<Option<String>, minijinja::Error> {
+    // Only accept plain filenames, not paths.
+    if name.contains('/') || name.contains('\\') || name == "." || name == ".." {
+        return Ok(None);
+    }
+
+    // Load the named template from disk.
+    let path = Utf8Path::new(TMPL_DIR).join(name);
+    match fs::read_to_string(path) {
+        Ok(source) => Ok(Some(source)),
+        Err(_) => Ok(None), // TODO maybe propagate error
+    }
+}
+
 impl Context {
     fn new(src_dir: &str, dest_dir: &str) -> Self {
         let mut env = minijinja::Environment::new();
-        env.set_loader(move |name| {
-            // TODO embed in release mode
-            if name.contains('/') || name.contains('\\') || name == "." || name == ".." {
-                return Ok(None);
+
+        // In release mode, embed template files.
+        #[cfg(not(debug_assertions))]
+        {
+            const DIR: include_dir::Dir =
+                include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates");
+            for file in DIR.files() {
+                let name = file
+                    .path()
+                    .file_name()
+                    .expect("embedded path is a filename")
+                    .to_str()
+                    .expect("embedded path is UTF-8");
+                let source = file.contents_utf8().expect("embedded template is UTF-8");
+                env.add_template(name, source)
+                    .expect("embedded template is valid Jinja code");
             }
-            let path = Utf8Path::new(TMPL_DIR).join(name);
-            match fs::read_to_string(path) {
-                Ok(source) => Ok(Some(source)),
-                Err(_) => Ok(None), // TODO maybe propagate error
-            }
-        });
+        }
+
+        // In debug mode, load directly from the filesystem.
+        #[cfg(debug_assertions)]
+        env.set_loader(load_template);
 
         Self {
             src_dir: src_dir.into(),
