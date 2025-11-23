@@ -54,12 +54,7 @@ impl Context {
 
     fn render_note(&self, src_path: &Utf8Path, dest_path: &Utf8Path) -> Result<()> {
         let source = fs::read_to_string(src_path)?;
-        let parser = pulldown_cmark::Parser::new(&source);
-        let body = {
-            let mut b = String::new();
-            pulldown_cmark::html::push_html(&mut b, parser);
-            b
-        };
+        let body = render_markdown(&source);
 
         let out_file = fs::File::create(dest_path)?;
 
@@ -88,6 +83,17 @@ impl Context {
         }
         Ok(())
     }
+}
+
+fn render_markdown(source: &str) -> String {
+    let mut options = pulldown_cmark::Options::empty();
+    options.insert(pulldown_cmark::Options::ENABLE_HEADING_ATTRIBUTES);
+    options.insert(pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION);
+    let parser = pulldown_cmark::Parser::new_ext(&source, options);
+
+    let mut buf = String::new();
+    pulldown_cmark::html::push_html(&mut buf, parser);
+    buf
 }
 
 fn main() {
