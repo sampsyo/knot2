@@ -1,4 +1,4 @@
-mod assets;
+pub mod assets;
 
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
@@ -10,19 +10,6 @@ struct Context {
     src_dir: Utf8PathBuf,
     dest_dir: Utf8PathBuf,
     tmpls: minijinja::Environment<'static>,
-}
-
-fn load_template(name: &str) -> std::result::Result<Option<String>, minijinja::Error> {
-    // Only accept plain filenames, not paths.
-    if name.contains('/') || name.contains('\\') || name == "." || name == ".." {
-        return Ok(None);
-    }
-
-    // Load the named template from disk.
-    match TEMPLATES.read(name) {
-        Ok(source) => Ok(source),
-        Err(_) => Ok(None), // TODO maybe propagate error
-    }
 }
 
 impl Context {
@@ -40,7 +27,12 @@ impl Context {
 
         // In debug mode, load directly from the filesystem.
         #[cfg(debug_assertions)]
-        env.set_loader(load_template);
+        env.set_loader(|name| {
+            match TEMPLATES.read(name) {
+                Ok(source) => Ok(source),
+                Err(_) => Ok(None), // TODO maybe propagate error
+            }
+        });
 
         Self {
             src_dir: src_dir.into(),
