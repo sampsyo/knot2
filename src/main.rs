@@ -4,7 +4,7 @@ use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::fs;
 
-assets!(TEMPLATES, "templates", "note.html");
+assets!(TEMPLATES, "templates", ["note.html"]);
 
 struct Context {
     src_dir: Utf8PathBuf,
@@ -21,7 +21,7 @@ impl Context {
         {
             for (name, source) in TEMPLATES.contents() {
                 env.add_template(name, source)
-                    .expect("embedded template is valid Jinja code");
+                    .expect("embedded template must be valid Jinja code");
             }
         }
 

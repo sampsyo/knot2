@@ -92,7 +92,7 @@ pub type FileAssets = Assets<NameList>;
 
 #[macro_export]
 macro_rules! embed_assets {
-    ($constname:ident, $dirname:literal, $($filename:literal),*) => {
+    ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
         const $constname: $crate::assets::EmbeddedAssets = $crate::assets::EmbeddedAssets::new(
             concat!(env!("CARGO_MANIFEST_DIR"), "/", $dirname),
             &[$(
@@ -107,7 +107,7 @@ macro_rules! embed_assets {
 
 #[macro_export]
 macro_rules! file_assets {
-    ($constname:ident, $dirname:literal, $($filename:literal),*) => {
+    ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
         const $constname: $crate::assets::FileAssets = $crate::assets::FileAssets::new(
             concat!(env!("CARGO_MANIFEST_DIR"), "/", $dirname),
             &[$( $filename, )*],
@@ -117,11 +117,11 @@ macro_rules! file_assets {
 
 #[macro_export]
 macro_rules! assets {
-    ($constname:ident, $dirname:literal, $($filename:literal),*) => {
+    ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
         #[cfg(debug_assertions)]
-        file_assets!($constname, $dirname, "note.html");
+        file_assets!($constname, $dirname, [ $($filename),* ]);
 
         #[cfg(not(debug_assertions))]
-        embed_assets!($constname, $dirname, "note.html");
+        embed_assets!($constname, $dirname, [ $($filename),* ]);
     };
 }
