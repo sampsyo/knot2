@@ -1,9 +1,10 @@
+mod assets;
+
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::fs;
 
-const TMPL_DIR: &str = "templates";
-const NOTE_TEMPLATE: &str = "note.html";
+assets!(TEMPLATES, "templates", "note.html");
 
 struct Context {
     src_dir: Utf8PathBuf,
@@ -18,9 +19,8 @@ fn load_template(name: &str) -> std::result::Result<Option<String>, minijinja::E
     }
 
     // Load the named template from disk.
-    let path = Utf8Path::new(TMPL_DIR).join(name);
-    match fs::read_to_string(path) {
-        Ok(source) => Ok(Some(source)),
+    match TEMPLATES.load(name) {
+        Ok(source) => Ok(source),
         Err(_) => Ok(None), // TODO maybe propagate error
     }
 }
@@ -32,16 +32,7 @@ impl Context {
         // In release mode, embed template files.
         #[cfg(not(debug_assertions))]
         {
-            const DIR: include_dir::Dir =
-                include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates");
-            for file in DIR.files() {
-                let name = file
-                    .path()
-                    .file_name()
-                    .expect("embedded path is a filename")
-                    .to_str()
-                    .expect("embedded path is UTF-8");
-                let source = file.contents_utf8().expect("embedded template is UTF-8");
+            for (name, source) in TEMPLATES.embedded_files() {
                 env.add_template(name, source)
                     .expect("embedded template is valid Jinja code");
             }
@@ -83,7 +74,7 @@ impl Context {
 
         let out_file = fs::File::create(dest_path)?;
 
-        let tmpl = self.tmpls.get_template(NOTE_TEMPLATE)?;
+        let tmpl = self.tmpls.get_template("note.html")?;
         tmpl.render_to_write(
             minijinja::context! {
                 body => body,
