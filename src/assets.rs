@@ -50,10 +50,12 @@ pub struct Assets<F: FileList> {
 }
 
 impl<F: FileList> Assets<F> {
+    /// Check whether a given asset file is available (embedded or on disk).
     pub fn contains(&self, name: &str) -> bool {
         self.files.names().any(|n| n == name)
     }
 
+    /// Read an asset file from disk.
     pub fn read(&self, name: &str) -> std::io::Result<Option<String>> {
         if self.contains(name) {
             let path = Path::new(self.dir).join(name);
@@ -63,10 +65,14 @@ impl<F: FileList> Assets<F> {
         }
     }
 
+    /// Get the embedded contents of a file. If this is a filesystem-only asset
+    /// set, this always returns None.
     pub fn get(&self, name: &str) -> Option<&'static str> {
         self.files.get(name)
     }
 
+    /// Get all the embedded files, iterating over `(name, contents)` pairs. If
+    /// this is a filesystem-only asset set, this is always empty.
     pub fn contents(&self) -> impl Iterator<Item = (&'static str, &'static str)> {
         self.files.contents()
     }
@@ -90,6 +96,7 @@ impl Assets<NameList> {
 pub type EmbeddedAssets = Assets<ContentList>;
 pub type FileAssets = Assets<NameList>;
 
+/// Embed a list of asset files in the binary.
 #[macro_export]
 macro_rules! embed_assets {
     ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
@@ -105,6 +112,7 @@ macro_rules! embed_assets {
     };
 }
 
+/// Provide access to a list of asset files in the filesystem.
 #[macro_export]
 macro_rules! file_assets {
     ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
@@ -115,6 +123,8 @@ macro_rules! file_assets {
     };
 }
 
+/// Either embed asset files or use them directly from the filesystem, depending
+/// on whether we're building in debug or release mode.
 #[macro_export]
 macro_rules! assets {
     ($constname:ident, $dirname:literal, [ $($filename:literal),* ]) => {
