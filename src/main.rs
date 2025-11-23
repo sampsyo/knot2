@@ -19,7 +19,7 @@ fn load_template(name: &str) -> std::result::Result<Option<String>, minijinja::E
     }
 
     // Load the named template from disk.
-    match TEMPLATES.load(name) {
+    match TEMPLATES.read(name) {
         Ok(source) => Ok(source),
         Err(_) => Ok(None), // TODO maybe propagate error
     }
@@ -32,7 +32,7 @@ impl Context {
         // In release mode, embed template files.
         #[cfg(not(debug_assertions))]
         {
-            for (name, source) in TEMPLATES.embedded_files() {
+            for (name, source) in TEMPLATES.contents() {
                 env.add_template(name, source)
                     .expect("embedded template is valid Jinja code");
             }

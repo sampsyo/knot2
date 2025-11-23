@@ -54,7 +54,7 @@ impl<F: FileList> Assets<F> {
         self.files.names().any(|n| n == name)
     }
 
-    pub fn load(&self, name: &str) -> std::io::Result<Option<String>> {
+    pub fn read(&self, name: &str) -> std::io::Result<Option<String>> {
         if self.contains(name) {
             let path = Path::new(self.dir).join(name);
             fs::read_to_string(path).map(|c| Some(c))
@@ -63,11 +63,11 @@ impl<F: FileList> Assets<F> {
         }
     }
 
-    pub fn get_embedded(&self, name: &str) -> Option<&'static str> {
+    pub fn get(&self, name: &str) -> Option<&'static str> {
         self.files.get(name)
     }
 
-    pub fn embedded_files(&self) -> impl Iterator<Item = (&'static str, &'static str)> {
+    pub fn contents(&self) -> impl Iterator<Item = (&'static str, &'static str)> {
         self.files.contents()
     }
 }
