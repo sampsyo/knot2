@@ -1,9 +1,23 @@
 <!doctype html>
 <html>
     <head>
+        <meta charset="utf-8" />
         <title>knot note</title>
+        <style>
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, Helvetica, Arial,
+                    sans-serif;
+                font-size: 16px;
+            }
+            main {
+                max-width: 40em;
+                margin: 0 0 0 2rem;
+                line-height: 1.7;
+            }
+        </style>
     </head>
     <body>
-        {{ body | safe }}
+        <main>{{ body | safe }}</main>
     </body>
 </html>
