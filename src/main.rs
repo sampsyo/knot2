@@ -125,6 +125,8 @@ fn render_markdown(source: &str) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_FOOTNOTES);
     let parser = Parser::new_ext(source, options);
 
     // TODO generate slugified anchors, produce table of contents
