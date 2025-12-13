@@ -78,17 +78,14 @@ impl Context {
     /// If `src` is the path to a Markdown note file, return its HTML
     /// destination path. Otherwise, return None.
     fn note_dest(&self, src: &Path) -> Option<PathBuf> {
-        match src.extension() {
-            Some(ext) => {
-                if ext == "md" {
-                    let mut mirrored = self.mirrored_path(src);
-                    mirrored.set_extension("html");
-                    Some(mirrored)
-                } else {
-                    None
-                }
-            }
-            None => None,
+        if let Some(ext) = src.extension()
+            && ext == "md"
+        {
+            let mut mirrored = self.mirrored_path(src);
+            mirrored.set_extension("html");
+            Some(mirrored)
+        } else {
+            None
         }
     }
 
