@@ -106,14 +106,18 @@ impl Context {
                 // Create mirrored directories.
                 fs::create_dir_all(self.mirrored_path(entry.path()))?;
             } else if entry.file_type().is_file() {
-                // Is this a Markdown note? Render it.
-                if let Some(dest_path) = self.note_dest(entry.path()) {
-                    match self.render_note(entry.path(), &dest_path) {
+                // Is this a Markdown note? Render it. Otherwise, just copy it.
+                let src_path = entry.path();
+                if let Some(dest_path) = self.note_dest(src_path) {
+                    match self.render_note(src_path, &dest_path) {
                         Ok(_) => (),
                         Err(e) => {
                             eprintln!("error rendering note {}: {}", entry.path().display(), e)
                         }
                     }
+                } else {
+                    std::fs::copy(src_path, self.mirrored_path(src_path))?;
+                    ()
                 }
             }
         }
