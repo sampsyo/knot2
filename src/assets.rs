@@ -59,7 +59,7 @@ impl<F: FileList> Assets<F> {
     pub fn read(&self, name: &str) -> std::io::Result<Option<String>> {
         if self.contains(name) {
             let path = Path::new(self.dir).join(name);
-            fs::read_to_string(path).map(|c| Some(c))
+            fs::read_to_string(path).map(Some)
         } else {
             Ok(None)
         }

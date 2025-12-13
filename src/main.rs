@@ -117,7 +117,6 @@ impl Context {
                     }
                 } else {
                     std::fs::copy(src_path, self.mirrored_path(src_path))?;
-                    ()
                 }
             }
         }
@@ -132,7 +131,7 @@ fn render_markdown(source: &str) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
-    let parser = Parser::new_ext(&source, options);
+    let parser = Parser::new_ext(source, options);
 
     // TODO generate slugified anchors, produce table of contents
     // TODO gather top-level heading as title
@@ -143,7 +142,7 @@ fn render_markdown(source: &str) -> String {
 }
 
 fn main() {
-    let src_dir = std::env::args().into_iter().nth(1).unwrap();
+    let src_dir = std::env::args().nth(1).unwrap();
     let ctx = Context::new(&src_dir, "_public");
     ctx.render_all().unwrap();
 }
