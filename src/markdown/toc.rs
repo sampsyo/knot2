@@ -2,9 +2,9 @@ use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct TocEntry {
-    level: HeadingLevel,
-    id: Option<String>,
-    title: String,
+    pub level: HeadingLevel,
+    pub id: Option<String>,
+    pub title: String,
 }
 
 /// A pulldown-cmark adapter that extracts a table of contents from a Markdown

@@ -3,14 +3,13 @@ mod toc;
 
 use pulldown_cmark::{Options, Parser, html::push_html};
 
-pub fn render(source: &str) -> String {
+pub fn render(source: &str) -> (String, Vec<toc::TocEntry>) {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_FOOTNOTES);
 
-    // TODO produce table of contents
     // TODO gather top-level heading as title
 
     let mut html_buf = String::new();
@@ -21,5 +20,5 @@ pub fn render(source: &str) -> String {
     let iter = toc::TableOfContents::new(iter, &mut toc_entries);
 
     push_html(&mut html_buf, iter);
-    html_buf
+    (html_buf, toc_entries)
 }
