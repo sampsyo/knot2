@@ -61,24 +61,22 @@ where
                 // Buffer up all the events until the header ends.
                 // TODO is there a clever iterator helper that can "chop off"
                 // another iterator, then we can just `collect` that
-                let mut buf = vec![];
                 let mut textbuf = String::new(); // TODO avoid all the concatenation
                 while let Some(buf_event) = self.iter.next() {
                     let is_end = match &buf_event {
                         Event::End(TagEnd::Heading(_)) => true,
                         Event::Text(text) => {
-                            dbg!("hi", text);
                             textbuf.push_str(text);
                             false
                         }
                         _ => false,
                     };
-                    buf.push(buf_event);
+                    self.buffer.push_back(buf_event);
                     if is_end {
                         break;
                     }
                 }
-                self.buffer.extend(buf); // TODO avoid the vec
+                dbg!(textbuf);
 
                 Some(event)
             }
