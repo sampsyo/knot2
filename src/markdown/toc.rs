@@ -1,35 +1,38 @@
 use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 #[derive(Debug, PartialEq, Eq)]
-struct TocEntry {
+pub struct TocEntry {
     level: HeadingLevel,
     id: Option<String>,
     title: String,
 }
 
-pub struct TableOfContents<'a, I>
+/// A pulldown-cmark adapter that extracts a table of contents from a Markdown
+/// document, i.e., a list of all the headings. When this iterator runs, it
+/// pushes the TOC entries into a vector that you supply.
+pub struct TableOfContents<'a, 'b, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
     iter: I,
-    entries: Vec<TocEntry>,
+    pub entries: &'b mut Vec<TocEntry>,
     in_heading: bool,
 }
 
-impl<'a, I> TableOfContents<'a, I>
+impl<'a, 'b, I> TableOfContents<'a, 'b, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
-    pub fn new(iter: I) -> Self {
+    pub fn new(iter: I, entries: &'b mut Vec<TocEntry>) -> Self {
         Self {
             iter,
-            entries: Vec::new(),
+            entries,
             in_heading: false,
         }
     }
 }
 
-impl<'a, I> Iterator for TableOfContents<'a, I>
+impl<'a, 'b, I> Iterator for TableOfContents<'a, 'b, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
@@ -81,9 +84,10 @@ mod tests {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
         let parser = Parser::new_ext(source, options);
-        let mut tocgen = TableOfContents::new(parser);
-        tocgen.by_ref().for_each(|_| {}); // Just consume the whole iterator.
-        tocgen.entries
+        let mut entries = vec![];
+        let mut toc = TableOfContents::new(parser, &mut entries);
+        toc.by_ref().for_each(|_| {}); // Just consume the whole iterator.
+        entries
     }
 
     #[test]

@@ -1,7 +1,7 @@
 mod add_ids;
 mod toc;
 
-use pulldown_cmark::{Options, Parser, html};
+use pulldown_cmark::{Options, Parser, html::push_html};
 
 pub fn render(source: &str) -> String {
     let mut options = Options::empty();
@@ -9,13 +9,17 @@ pub fn render(source: &str) -> String {
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_FOOTNOTES);
-    let parser = Parser::new_ext(source, options);
 
     // TODO produce table of contents
     // TODO gather top-level heading as title
 
-    let mut buf = String::new();
-    let iter = add_ids::AddHeadingIds::new(parser);
-    html::push_html(&mut buf, iter);
-    buf
+    let mut html_buf = String::new();
+    let mut toc_entries = vec![];
+
+    let iter = Parser::new_ext(source, options);
+    let iter = add_ids::AddHeadingIds::new(iter);
+    let iter = toc::TableOfContents::new(iter, &mut toc_entries);
+
+    push_html(&mut html_buf, iter);
+    html_buf
 }
