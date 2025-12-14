@@ -18,12 +18,18 @@ pub fn render(source: &str) -> String {
     buf
 }
 
+/// Slugify a string and append it to a buffer.
 fn slug_append(buf: &mut String, s: &str) {
-    buf.extend(s.chars().map(|c| {
+    let mut last_is_dash = false;
+    buf.extend(s.chars().filter_map(|c| {
         if c.is_alphanumeric() {
-            c.to_ascii_lowercase()
+            last_is_dash = false;
+            Some(c.to_ascii_lowercase())
+        } else if last_is_dash {
+            None
         } else {
-            '-'
+            last_is_dash = true;
+            Some('-')
         }
     }));
 }
@@ -137,7 +143,17 @@ mod tests {
     }
 
     #[test]
-    fn spaces() {
+    fn space() {
         assert_eq!(render_with_ids("# h i"), "<h1 id=\"h-i\">h i</h1>\n");
+    }
+
+    #[test]
+    fn punctuation() {
+        assert_eq!(render_with_ids("# h'i"), "<h1 id=\"h-i\">h'i</h1>\n");
+    }
+
+    #[test]
+    fn multi_gap() {
+        assert_eq!(render_with_ids("# h ' i"), "<h1 id=\"h-i\">h ' i</h1>\n");
     }
 }
