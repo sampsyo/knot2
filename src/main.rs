@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod markdown;
 
 use anyhow::Result;
 use std::ffi::OsStr;
@@ -42,7 +43,7 @@ impl Context {
 
     fn render_note(&self, src_path: &Path, dest_path: &Path) -> Result<()> {
         let source = fs::read_to_string(src_path)?;
-        let body = render_markdown(&source);
+        let body = markdown::render(&source);
 
         let out_file = fs::File::create(dest_path)?;
 
@@ -119,24 +120,6 @@ impl Context {
 
         Ok(())
     }
-}
-
-fn render_markdown(source: &str) -> String {
-    use pulldown_cmark::{Options, Parser, html};
-
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
-    options.insert(Options::ENABLE_SMART_PUNCTUATION);
-    options.insert(Options::ENABLE_TABLES);
-    options.insert(Options::ENABLE_FOOTNOTES);
-    let parser = Parser::new_ext(source, options);
-
-    // TODO generate slugified anchors, produce table of contents
-    // TODO gather top-level heading as title
-
-    let mut buf = String::new();
-    html::push_html(&mut buf, parser);
-    buf
 }
 
 /// Try to hard-link `from` at `to`, falling back to a copy if the link fails
