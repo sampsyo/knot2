@@ -34,6 +34,8 @@ fn slug_append(buf: &mut String, s: &str) {
     }));
 }
 
+/// A pulldown-cmark adapter that adds IDs to headings that don't already have
+/// them by "slugifying" the heading's text.
 struct AddHeadingIds<'a, I> {
     iter: I,
     buffer: VecDeque<Event<'a>>,
@@ -43,11 +45,38 @@ impl<'a, I> AddHeadingIds<'a, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
-    pub fn new(iter: I) -> Self {
+    fn new(iter: I) -> Self {
         Self {
             iter,
             buffer: VecDeque::new(),
         }
+    }
+
+    /// Assuming that `self` is now just after the beginning of a header, buffer
+    /// up all the events until the header in `self.buffer`. Return the
+    /// slugified version of the header's text contents.
+    fn consume_heading(&mut self) -> String {
+        assert!(self.buffer.is_empty(), "nested headings are not allowed");
+        let mut slugbuf = String::new();
+
+        // This is crying out for a `take_until` iterator method; `take_while`
+        // doesn't quite cut it.
+        for future_event in self.iter.by_ref() {
+            let is_end = match &future_event {
+                Event::End(TagEnd::Heading(_)) => true,
+                Event::Text(text) => {
+                    slug_append(&mut slugbuf, text);
+                    false
+                }
+                _ => false,
+            };
+            self.buffer.push_back(future_event);
+            if is_end {
+                break;
+            }
+        }
+
+        slugbuf
     }
 }
 
@@ -65,39 +94,17 @@ where
 
         let event = self.iter.next()?;
         match event {
-            // A heading without an ID.
             Event::Start(Tag::Heading {
                 level,
                 id: None,
                 classes,
                 attrs,
             }) => {
-                assert!(self.buffer.is_empty(), "nested headings are not allowed");
-
-                // Buffer up all the events until the header ends. Accumulate
-                // the slug from text found within these buffered events. Later,
-                // we'll unbuffer the events when this iterator is called next.
-                // (This is crying out for a `take_until` iterator method;
-                // `take_while` doesn't quite cut it.)
-                let mut slugbuf = String::new();
-                for future_event in self.iter.by_ref() {
-                    let is_end = match &future_event {
-                        Event::End(TagEnd::Heading(_)) => true,
-                        Event::Text(text) => {
-                            slug_append(&mut slugbuf, text);
-                            false
-                        }
-                        _ => false,
-                    };
-                    self.buffer.push_back(future_event);
-                    if is_end {
-                        break;
-                    }
-                }
-
+                // It's a heading without an ID. We do our thing.
+                let slug = self.consume_heading();
                 Some(Event::Start(Tag::Heading {
                     level,
-                    id: Some(CowStr::from(slugbuf)),
+                    id: Some(CowStr::from(slug)),
                     classes,
                     attrs,
                 }))
