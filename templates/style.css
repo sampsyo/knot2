@@ -43,7 +43,8 @@ main {
     display: block;
     border-radius: 3px;
 
-    padding: 1em 8px;
+    /* "Margin bleed" for the background. */
+    padding: 8px;
     margin-left: -8px;
     margin-right: -8px;
 
