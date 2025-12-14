@@ -1,4 +1,4 @@
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, html};
+use pulldown_cmark::{CowStr, Event, Options, Parser, Tag, TagEnd, html};
 use std::collections::VecDeque;
 
 pub fn render(source: &str) -> String {
@@ -48,13 +48,13 @@ where
         }
 
         let event = self.iter.next()?;
-        match &event {
+        match event {
             // A heading without an ID.
             Event::Start(Tag::Heading {
-                level: _,
+                level,
                 id: None,
-                classes: _,
-                attrs: _,
+                classes,
+                attrs,
             }) => {
                 assert!(self.buffer.is_empty(), "nested headings are not allowed");
 
@@ -76,9 +76,14 @@ where
                         break;
                     }
                 }
-                dbg!(textbuf);
+                dbg!(&textbuf);
 
-                Some(event)
+                Some(Event::Start(Tag::Heading {
+                    level,
+                    id: Some(CowStr::from(textbuf)),
+                    classes,
+                    attrs,
+                }))
             }
             _ => Some(event),
         }
@@ -116,7 +121,10 @@ mod tests {
 
     #[test]
     fn style() {
-        assert_eq!(render_with_ids("# *hi*"), "<h1 id=\"hi\">hi</h1>\n");
+        assert_eq!(
+            render_with_ids("# *hi*"),
+            "<h1 id=\"hi\"><em>hi</em></h1>\n"
+        );
     }
 
     #[test]
