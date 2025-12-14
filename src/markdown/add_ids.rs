@@ -19,7 +19,10 @@ fn slug_append(buf: &mut String, s: &str) {
 
 /// A pulldown-cmark adapter that adds IDs to headings that don't already have
 /// them by "slugifying" the heading's text.
-pub struct AddHeadingIds<'a, I> {
+pub struct AddHeadingIds<'a, I>
+where
+    I: Iterator<Item = Event<'a>>,
+{
     iter: I,
     buffer: VecDeque<Event<'a>>,
 }

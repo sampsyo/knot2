@@ -1,4 +1,5 @@
 mod add_ids;
+mod toc;
 
 use pulldown_cmark::{Options, Parser, html};
 
