@@ -46,6 +46,15 @@ impl Context {
         let source = fs::read_to_string(src_path)?;
         let (body, toc_entries) = markdown::render(&source);
 
+        // Extract the top-level title, if any.
+        let title = if let Some(first_head) = toc_entries.first()
+            && first_head.level as u8 == 1
+        {
+            Some(first_head.title.clone())
+        } else {
+            None
+        };
+
         // Get the table of contents ready for rendering.
         let toc: Vec<_> = toc_entries
             .into_iter()
@@ -63,6 +72,7 @@ impl Context {
         let out_file = fs::File::create(dest_path)?;
         tmpl.render_to_write(
             minijinja::context! {
+                title => title,
                 body => body,
                 toc => toc,
             },
