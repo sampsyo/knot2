@@ -8,3 +8,9 @@ anyhow = "1"
 minijinja = { version = "2.12", features = ["loader"] }
 pulldown-cmark = "0.13.0"
 walkdir = "2"
+
+# For the server.
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+axum = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3.0"

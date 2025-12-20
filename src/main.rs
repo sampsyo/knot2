@@ -1,5 +1,6 @@
 pub mod assets;
 pub mod markdown;
+pub mod serve;
 
 use anyhow::Result;
 use std::ffi::OsStr;
@@ -160,6 +161,9 @@ fn hard_link_or_copy(from: &Path, to: &Path) -> std::io::Result<Option<u64>> {
 }
 
 fn main() {
+    // TODO proper CLI handling!
+    serve::serve();
+
     let src_dir = std::env::args().nth(1).unwrap();
     let ctx = Context::new(&src_dir, "_public");
     ctx.render_site().unwrap();
