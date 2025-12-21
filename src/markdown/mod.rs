@@ -9,6 +9,8 @@ pub fn render(source: &str) -> (String, Vec<toc::TocEntry>) {
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_FOOTNOTES);
+    options.insert(Options::ENABLE_TASKLISTS);
+    options.insert(Options::ENABLE_YAML_STYLE_METADATA_BLOCKS);
 
     // TODO gather top-level heading as title
 
