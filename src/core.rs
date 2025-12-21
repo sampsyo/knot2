@@ -253,10 +253,7 @@ fn ignore_filename(name: &OsStr) -> bool {
 
 /// Does this source filename look like a Markdown note file?
 fn is_note(path: &Path) -> bool {
-    match path.extension() {
-        Some(e) if e == "md" => true,
-        _ => false,
-    }
+    matches!(path.extension(), Some(e) if e == "md")
 }
 
 /// Validate and relative-ize a requested path. If we return a path, it is now
