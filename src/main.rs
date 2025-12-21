@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod core;
 pub mod markdown;
+pub mod serve;
 
 use argh::FromArgs;
 use core::Context;
@@ -28,6 +29,7 @@ enum Command {
     Build(BuildCommand),
     Show(ShowCommand),
     List(ListCommand),
+    Serve(ServeCommand),
 }
 
 #[derive(FromArgs)]
@@ -48,6 +50,11 @@ struct ShowCommand {
 /// list the resources in a site
 #[argh(subcommand, name = "list")]
 struct ListCommand {}
+
+#[derive(FromArgs)]
+/// run a web server
+#[argh(subcommand, name = "serve")]
+struct ServeCommand {}
 
 fn main() {
     let args: Knot2 = argh::from_env();
@@ -71,6 +78,9 @@ fn main() {
                     core::Resource::Note(path) => println!("note {}", path.display()),
                 }
             }
+        }
+        Command::Serve(_) => {
+            serve::serve(ctx);
         }
     }
 }

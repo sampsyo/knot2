@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 assets!(TEMPLATES, "templates", ["note.html", "style.css"]);
 
 pub struct Context {
-    src_dir: PathBuf,
+    pub src_dir: PathBuf,
     tmpls: minijinja::Environment<'static>,
 }
 
@@ -39,7 +39,7 @@ impl Context {
     }
 
     /// Render the HTML page for a given Markdown note.
-    fn render_note<W: io::Write>(&self, src_path: &Path, dest: &mut W) -> Result<()> {
+    pub fn render_note<W: io::Write>(&self, src_path: &Path, dest: &mut W) -> Result<()> {
         // Render the note body.
         let source = fs::read_to_string(src_path)?;
         let (body, toc_entries) = markdown::render(&source);
