@@ -109,23 +109,22 @@ impl Context {
     /// is at the same place is within `dest_dir`.
     ///
     /// Panics if `src` is not within `self.src_dir`.
-    fn mirrored_path(&self, src: &Path, dest_dir: &Path) -> PathBuf {
+    fn dest_path(&self, src: &Path, dest_dir: &Path) -> PathBuf {
         let rel_path = src
             .strip_prefix(&self.src_dir)
             .expect("path is within root directory");
         dest_dir.join(rel_path)
     }
 
-    /// If `src` is the path to a Markdown note file, return its HTML
-    /// destination path. Otherwise, return None.
-    fn note_dest(&self, src: &Path, dest_dir: &Path) -> Option<PathBuf> {
-        if is_note(src) {
-            let mut mirrored = self.mirrored_path(src, dest_dir);
-            mirrored.set_extension("html");
-            Some(mirrored)
-        } else {
-            None
-        }
+    /// Assuming `src` is the path to a Markdown note file, return its HTML
+    /// destination path.
+    ///
+    /// Panics if `src` is not a note file within `self.src_dir`.
+    fn note_dest_path(&self, src: &Path, dest_dir: &Path) -> PathBuf {
+        assert!(is_note(src), "must be a note path");
+        let mut mirrored = self.dest_path(src, dest_dir);
+        mirrored.set_extension("html");
+        mirrored
     }
 
     /// Given a relative path to a rendered file (i.e., something that would go
@@ -194,13 +193,13 @@ impl Context {
         for rsrc in self.read_resources() {
             match rsrc {
                 Resource::Directory(src_path) => {
-                    fs::create_dir_all(self.mirrored_path(&src_path, dest_dir))?;
+                    fs::create_dir_all(self.dest_path(&src_path, dest_dir))?;
                 }
                 Resource::Static(src_path) => {
-                    hard_link_or_copy(&src_path, &self.mirrored_path(&src_path, dest_dir))?;
+                    hard_link_or_copy(&src_path, &self.dest_path(&src_path, dest_dir))?;
                 }
                 Resource::Note(src_path) => {
-                    let dest_path = self.note_dest(&src_path, dest_dir).expect("must be a note");
+                    let dest_path = self.note_dest_path(&src_path, dest_dir);
                     match self.render_note_to_file(&src_path, &dest_path) {
                         Ok(_) => (),
                         Err(e) => {
