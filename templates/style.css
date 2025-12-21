@@ -9,6 +9,7 @@ body {
 
 main {
   grid-column: 2;
+  grid-row: 1;
 
   p,
   ul,
@@ -59,6 +60,7 @@ main {
 
 nav {
   grid-column: 3;
+  grid-row: 1;
 
   color: #666;
   font-size: 14px;
@@ -100,5 +102,21 @@ nav {
     &[data-level="6"] {
       padding-left: 2.5rem;
     }
+  }
+}
+
+/* Mobile layout: no sidebar. */
+@media (max-width: 50rem) {
+  body {
+    grid-template-columns: 0.1fr 2fr 0.1fr;
+    gap: 0;
+  }
+  nav {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  main {
+    grid-column: 2;
+    grid-row: 2;
   }
 }
