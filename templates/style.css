@@ -5,6 +5,10 @@ body {
   display: grid;
   grid-template-columns: 0.2fr 2fr 1fr;
   gap: 2rem;
+
+  --theme-color: rgb(179, 27, 27);
+  --faded-color: #666;
+  --faded-theme-color: #ccc;
 }
 
 main {
@@ -18,11 +22,11 @@ main {
   }
 
   a:link {
-    color: rgb(179, 27, 27);
+    color: var(--theme-color);
     text-decoration-thickness: 2%;
   }
   a:visited {
-    color: rgb(179, 27, 27);
+    color: var(--theme-color);
   }
 
   pre,
@@ -62,7 +66,7 @@ nav {
   grid-column: 3;
   grid-row: 1;
 
-  color: #666;
+  color: var(--faded-color);
   font-size: 14px;
 
   ul {
@@ -84,7 +88,7 @@ nav {
       color: inherit;
     }
     a:hover {
-      color: #333;
+      color: var(--faded-theme-color);
     }
 
     &[data-level="2"] {
@@ -118,5 +122,16 @@ nav {
   main {
     grid-column: 2;
     grid-row: 2;
+  }
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: black;
+    color: white;
+    --theme-color: rgb(218, 60, 63);
+    --faded-color: #aaa;
+    --faded-theme-color: #eee;
   }
 }
