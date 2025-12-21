@@ -2,6 +2,7 @@ pub mod assets;
 pub mod markdown;
 
 use anyhow::Result;
+use argh::FromArgs;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -86,7 +87,7 @@ impl Context {
     /// files (prefixed with .) and ones starting with _, which are special.
     fn skip_file(name: &OsStr) -> bool {
         let bytes = name.as_encoded_bytes();
-        bytes.starts_with(b".") || bytes.starts_with(b"_")
+        (bytes != b"." && bytes.starts_with(b".")) || bytes.starts_with(b"_")
     }
 
     /// Given a path that is within `self.src_dir`, produce a mirrored path that
@@ -206,10 +207,42 @@ fn remove_dir_force(path: &Path) -> std::io::Result<()> {
     }
 }
 
+#[derive(FromArgs)]
+/// a static knowledge base
+struct Knot2 {
+    #[argh(subcommand)]
+    mode: Command,
+}
+
+#[derive(FromArgs)]
+#[argh(subcommand)]
+enum Command {
+    Build(BuildCommand),
+    Show(ShowCommand),
+}
+
+#[derive(FromArgs)]
+/// build the full site
+#[argh(subcommand, name = "build")]
+struct BuildCommand {}
+
+#[derive(FromArgs)]
+/// print a single file from the site
+#[argh(subcommand, name = "show")]
+struct ShowCommand {
+    #[argh(positional)]
+    /// a relative path to the file to render
+    path: String,
+}
+
 fn main() {
+    let args: Knot2 = argh::from_env();
     let ctx = Context::new(".", "_public");
-    dbg!(ctx.resolve_resource(Path::new("foo.html")));
-    dbg!(ctx.resolve_resource(Path::new("bar.html")));
-    dbg!(ctx.resolve_resource(Path::new("stuff.txt")));
-    ctx.render_site().unwrap();
+    match args.mode {
+        Command::Build(_) => ctx.render_site().unwrap(),
+        Command::Show(cmd) => {
+            let rsrc = ctx.resolve_resource(Path::new(&cmd.path));
+            println!("{:?}", rsrc);
+        }
+    }
 }
