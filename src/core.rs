@@ -103,9 +103,7 @@ impl Context {
     /// If `src` is the path to a Markdown note file, return its HTML
     /// destination path. Otherwise, return None.
     fn note_dest(&self, src: &Path) -> Option<PathBuf> {
-        if let Some(ext) = src.extension()
-            && ext == "md"
-        {
+        if is_note(src) {
             let mut mirrored = self.mirrored_path(src);
             mirrored.set_extension("html");
             Some(mirrored)
@@ -161,30 +159,51 @@ impl Context {
         }
     }
 
+    pub fn read_resources(&self) -> impl Iterator<Item = Resource> {
+        WalkDir::new(&self.src_dir)
+            .into_iter()
+            .filter_entry(|e| !ignore_filename(e.file_name()))
+            .filter_map(|entry| match entry {
+                Ok(entry) => {
+                    if entry.file_type().is_dir() {
+                        Some(Resource::Directory(entry.path().into()))
+                    } else if entry.file_type().is_file() {
+                        if is_note(entry.path()) {
+                            Some(Resource::Note(entry.path().into()))
+                        } else {
+                            Some(Resource::Static(entry.path().into()))
+                        }
+                    } else {
+                        None
+                    }
+                }
+                Err(e) => {
+                    eprintln!("directory walk error: {}", e);
+                    None
+                }
+            })
+    }
+
     pub fn render_site(&self) -> Result<()> {
         remove_dir_force(&self.dest_dir)?;
 
         // TODO parallelize rendering work
-        for entry in WalkDir::new(&self.src_dir)
-            .into_iter()
-            .filter_entry(|e| !ignore_filename(e.file_name()))
-        {
-            let entry = entry?;
-            if entry.file_type().is_dir() {
-                // Create mirrored directories.
-                fs::create_dir_all(self.mirrored_path(entry.path()))?;
-            } else if entry.file_type().is_file() {
-                // Is this a Markdown note? Render it. Otherwise, just copy it.
-                let src_path = entry.path();
-                if let Some(dest_path) = self.note_dest(src_path) {
-                    match self.render_note(src_path, &dest_path) {
+        for rsrc in self.read_resources() {
+            match rsrc {
+                Resource::Directory(src_path) => {
+                    fs::create_dir_all(self.mirrored_path(&src_path))?;
+                }
+                Resource::Static(src_path) => {
+                    hard_link_or_copy(&src_path, &self.mirrored_path(&src_path))?;
+                }
+                Resource::Note(src_path) => {
+                    let dest_path = self.note_dest(&src_path).expect("must be a note");
+                    match self.render_note(&src_path, &dest_path) {
                         Ok(_) => (),
                         Err(e) => {
-                            eprintln!("error rendering note {}: {}", entry.path().display(), e)
+                            eprintln!("error rendering note {}: {}", src_path.display(), e)
                         }
                     }
-                } else {
-                    hard_link_or_copy(src_path, &self.mirrored_path(src_path))?;
                 }
             }
         }
@@ -227,6 +246,14 @@ fn remove_dir_force(path: &Path) -> std::io::Result<()> {
 fn ignore_filename(name: &OsStr) -> bool {
     let bytes = name.as_encoded_bytes();
     (bytes != b"." && bytes.starts_with(b".")) || bytes.starts_with(b"_")
+}
+
+/// Does this source filename look like a Markdown note file?
+fn is_note(path: &Path) -> bool {
+    match path.extension() {
+        Some(e) if e == "md" => true,
+        _ => false,
+    }
 }
 
 /// Validate and relative-ize a requested path. If we return a path, it is now

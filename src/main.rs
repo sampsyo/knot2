@@ -26,6 +26,7 @@ struct Knot2 {
 enum Command {
     Build(BuildCommand),
     Show(ShowCommand),
+    List(ListCommand),
 }
 
 #[derive(FromArgs)]
@@ -42,6 +43,11 @@ struct ShowCommand {
     path: String,
 }
 
+#[derive(FromArgs)]
+/// list the resources in a site
+#[argh(subcommand, name = "list")]
+struct ListCommand {}
+
 fn main() {
     let args: Knot2 = argh::from_env();
     let ctx = Context::new(&args.source, &args.dest);
@@ -53,5 +59,14 @@ fn main() {
             }
             None => println!("not found"),
         },
+        Command::List(_) => {
+            for rsrc in ctx.read_resources() {
+                match rsrc {
+                    core::Resource::Directory(path) => println!("dir  {}", path.display()),
+                    core::Resource::Static(path) => println!("file {}", path.display()),
+                    core::Resource::Note(path) => println!("note {}", path.display()),
+                }
+            }
+        }
     }
 }
