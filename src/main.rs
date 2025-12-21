@@ -4,8 +4,8 @@ pub mod markdown;
 use anyhow::Result;
 use argh::FromArgs;
 use std::ffi::OsStr;
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 use walkdir::WalkDir;
 
 assets!(TEMPLATES, "templates", ["note.html", "style.css"]);
@@ -42,7 +42,7 @@ impl Context {
         }
     }
 
-    fn render_note(&self, src_path: &Path, dest_path: &Path) -> Result<()> {
+    fn render_note_to_write<W: io::Write>(&self, src_path: &Path, dest: &mut W) -> Result<()> {
         // Render the note body.
         let source = fs::read_to_string(src_path)?;
         let (body, toc_entries) = markdown::render(&source);
@@ -70,17 +70,25 @@ impl Context {
 
         // Render the template.
         let tmpl = self.tmpls.get_template("note.html")?;
-        let out_file = fs::File::create(dest_path)?;
         tmpl.render_to_write(
             minijinja::context! {
                 title => title,
                 body => body,
                 toc => toc,
             },
-            out_file,
+            dest,
         )?;
 
         Ok(())
+    }
+
+    /// Render a single Markdown note file to an HTML file.
+    ///
+    /// Both `src_path` and `dest_path` are complete paths to files, not
+    /// relative to our source and destination directory.
+    fn render_note(&self, src_path: &Path, dest_path: &Path) -> Result<()> {
+        let mut out_file = fs::File::create(dest_path)?;
+        self.render_note_to_write(src_path, &mut out_file)
     }
 
     /// Should we skip a given file from the rendering process? We skip hidden
@@ -118,7 +126,9 @@ impl Context {
     /// Given a relative path to a rendered file (i.e., something that would go
     /// in the destination directory), get the underlying resource for that
     /// path.
-    fn resolve_resource(&self, rel_path: &Path) -> Option<Resource> {
+    fn resolve_resource(&self, rel_path: &str) -> Option<Resource> {
+        let rel_path = Path::new(rel_path);
+
         // Reject all absolute paths.
         // TODO should we also do the full path santation thing?
         if rel_path.is_absolute() {
@@ -145,6 +155,17 @@ impl Context {
 
         // Not found.
         None
+    }
+
+    fn render_resource<W: std::io::Write>(&self, rsrc: Resource, write: &mut W) -> Result<()> {
+        match rsrc {
+            Resource::Static(path) => {
+                let mut file = fs::File::open(path)?;
+                io::copy(&mut file, write)?;
+                Ok(())
+            }
+            Resource::Note(path) => self.render_note_to_write(&path, write),
+        }
     }
 
     fn render_site(&self) -> Result<()> {
@@ -212,6 +233,14 @@ fn remove_dir_force(path: &Path) -> std::io::Result<()> {
 struct Knot2 {
     #[argh(subcommand)]
     mode: Command,
+
+    #[argh(option, default = "String::from(\".\")")]
+    /// source directory
+    source: String,
+
+    #[argh(option, default = "String::from(\"_public\")")]
+    /// destination directory
+    dest: String,
 }
 
 #[derive(FromArgs)]
@@ -237,12 +266,14 @@ struct ShowCommand {
 
 fn main() {
     let args: Knot2 = argh::from_env();
-    let ctx = Context::new(".", "_public");
+    let ctx = Context::new(&args.source, &args.dest);
     match args.mode {
         Command::Build(_) => ctx.render_site().unwrap(),
-        Command::Show(cmd) => {
-            let rsrc = ctx.resolve_resource(Path::new(&cmd.path));
-            println!("{:?}", rsrc);
-        }
+        Command::Show(cmd) => match ctx.resolve_resource(&cmd.path) {
+            Some(rsrc) => {
+                ctx.render_resource(rsrc, &mut io::stdout()).unwrap();
+            }
+            None => println!("not found"),
+        },
     }
 }
