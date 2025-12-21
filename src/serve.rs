@@ -2,30 +2,32 @@ use crate::Context;
 use crate::core::Resource;
 use axum::{
     Router,
-    extract::State,
-    http::{StatusCode, Uri, header},
+    extract::{Path, State},
+    http::{StatusCode, header},
     response::{Html, IntoResponse, Response},
+    routing::get,
 };
 use axum_extra::body::AsyncReadBody;
-use percent_encoding::percent_decode_str;
-use std::path::Path;
+use std::path;
 use std::sync::Arc;
 use tokio::fs;
 
 #[tokio::main]
 pub async fn serve(ctx: Context) {
     let shared_ctx = Arc::new(ctx);
-    let app = Router::new().fallback(handle).with_state(shared_ctx);
+    let app = Router::new()
+        .route("/{*path}", get(handle))
+        .with_state(shared_ctx);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
-    println!("listening on {}", listener.local_addr().unwrap());
+    eprintln!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }
 
 /// Respond with the contents of a file on the filesystem.
-async fn send_file(path: &Path) -> Result<Response, (StatusCode, String)> {
+async fn send_file(path: &path::Path) -> Result<Response, (StatusCode, String)> {
     let mime = mime_guess::from_path(path)
         .first_raw()
         .unwrap_or(mime_guess::mime::OCTET_STREAM.as_str());
@@ -42,13 +44,9 @@ async fn send_file(path: &Path) -> Result<Response, (StatusCode, String)> {
 /// Serve a resource from the site.
 async fn handle(
     State(ctx): State<Arc<Context>>,
-    uri: Uri,
+    Path(path): Path<String>,
 ) -> Result<Response, (StatusCode, String)> {
-    println!("GET {:?}", &uri);
-    let path = percent_decode_str(uri.path())
-        .decode_utf8()
-        .map_err(|_| (StatusCode::NOT_FOUND, "not found".into()))?;
-
+    eprintln!("GET {path}");
     match ctx.resolve_resource(&path) {
         Some(Resource::Note(src_path)) => {
             let mut buf: Vec<u8> = vec![];
