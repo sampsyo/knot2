@@ -47,6 +47,7 @@ async fn handle(
             let resp = FileStream::new(stream).file_name("hi");
             Ok(resp.into_response())
         }
-        _ => Ok("not found".into_response()),
+        Some(Resource::Directory(_)) => Ok("directory listings not implemented".into_response()),
+        None => Ok("not found".into_response()),
     }
 }
