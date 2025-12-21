@@ -4,14 +4,14 @@ use axum::{
     Router,
     body::Body,
     extract::State,
-    http::{StatusCode, Uri},
+    http::{StatusCode, Uri, header},
     response::IntoResponse,
     response::Response,
 };
-use axum_extra::response::file_stream::FileStream;
+use axum_extra::body::AsyncReadBody;
+use std::path::Path;
 use std::sync::Arc;
-use tokio::fs::File;
-use tokio_util::io::ReaderStream;
+use tokio::fs;
 
 #[tokio::main]
 pub async fn serve(ctx: Context) {
@@ -25,6 +25,20 @@ pub async fn serve(ctx: Context) {
         .unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn send_file(path: &Path) -> Result<Response, (StatusCode, String)> {
+    let mime = mime_guess::from_path(path)
+        .first_raw()
+        .unwrap_or(mime_guess::mime::OCTET_STREAM.as_str());
+
+    let file = fs::File::open(path)
+        .await
+        .map_err(|e| (StatusCode::NOT_FOUND, format!("not found: {e}")))?;
+
+    let headers = [(header::CONTENT_TYPE, mime)];
+    let body = AsyncReadBody::new(file);
+    Ok((headers, body).into_response())
 }
 
 async fn handle(
@@ -41,13 +55,11 @@ async fn handle(
             ctx.render_note(&src_path, &mut buf).unwrap();
             Ok(Body::from(buf).into_response())
         }
-        Some(Resource::Static(src_path)) => {
-            let file = File::open(src_path).await.unwrap();
-            let stream = ReaderStream::new(file);
-            let resp = FileStream::new(stream).file_name("hi");
-            Ok(resp.into_response())
-        }
-        Some(Resource::Directory(_)) => Ok("directory listings not implemented".into_response()),
-        None => Ok("not found".into_response()),
+        Some(Resource::Static(src_path)) => send_file(&src_path).await,
+        Some(Resource::Directory(_)) => Err((
+            StatusCode::NOT_IMPLEMENTED,
+            "directory listings not implemented".into(),
+        )),
+        None => Err((StatusCode::NOT_FOUND, "not found".into())),
     }
 }
