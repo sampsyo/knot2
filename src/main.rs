@@ -2,6 +2,7 @@ pub mod assets;
 pub mod core;
 pub mod markdown;
 pub mod serve;
+pub mod watch;
 
 use argh::FromArgs;
 use core::Context;
@@ -30,6 +31,7 @@ enum Command {
     Show(ShowCommand),
     List(ListCommand),
     Serve(ServeCommand),
+    Watch(WatchCommand),
 }
 
 #[derive(FromArgs)]
@@ -56,6 +58,11 @@ struct ListCommand {}
 #[argh(subcommand, name = "serve")]
 struct ServeCommand {}
 
+#[derive(FromArgs)]
+/// watch some paths (TK demo)
+#[argh(subcommand, name = "watch")]
+struct WatchCommand {}
+
 fn main() {
     let args: Knot2 = argh::from_env();
     let ctx = Context::new(&args.source);
@@ -81,6 +88,9 @@ fn main() {
         }
         Command::Serve(_) => {
             serve::serve(ctx);
+        }
+        Command::Watch(_) => {
+            watch::blarg(Path::new(&args.source));
         }
     }
 }

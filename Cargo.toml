@@ -16,3 +16,6 @@ axum = "0.8"
 tokio-util = { version = "0.7", features = ["io"] }
 axum-extra = { version = "0.12", features = ["async-read-body"] }
 mime_guess = { version = "2", default-features = false }
+
+# For watching & livereload.
+notify-debouncer-mini = "0.7"
