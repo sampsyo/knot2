@@ -1,9 +1,8 @@
 use crate::core::Context;
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind};
 use tokio::sync::broadcast;
 
 pub struct Watch {
-    ctx: Context,
     watcher: RecommendedWatcher,
     tx: broadcast::Sender<Event>,
 }
@@ -18,12 +17,22 @@ impl Watch {
     pub fn new(ctx: Context) -> Self {
         let (tx, _) = broadcast::channel(16);
         let foo = tx.clone();
+        let src_dir = ctx.src_dir.clone();
 
         let mut watcher = RecommendedWatcher::new(
-            move |res| {
+            move |res: notify::Result<notify::Event>| {
                 match res {
                     Ok(event) => {
                         eprintln!("event: {:?}", event);
+                        match event.kind {
+                            EventKind::Modify(ModifyKind::Data(_)) => {
+                                for path in event.paths.iter() {
+                                    dbg!(path);
+                                    dbg!(ctx.resource_for_file(&path));
+                                }
+                            }
+                            _ => (),
+                        }
                         match tx.send(Event::All) {
                             Ok(_) => (),
                             Err(e) => eprintln!("channel send error: {e}"),
@@ -37,15 +46,9 @@ impl Watch {
         )
         .unwrap();
 
-        watcher
-            .watch(&ctx.src_dir, RecursiveMode::Recursive)
-            .unwrap();
+        watcher.watch(&src_dir, RecursiveMode::Recursive).unwrap();
 
-        Self {
-            ctx,
-            watcher,
-            tx: foo,
-        }
+        Self { watcher, tx: foo }
     }
 }
 

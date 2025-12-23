@@ -2,7 +2,7 @@ use crate::assets::assets;
 use crate::markdown;
 use anyhow::Result;
 use std::ffi::OsStr;
-use std::path::{Component, Path, PathBuf};
+use std::path::{self, Component, Path, PathBuf};
 use std::{fs, io};
 use walkdir::WalkDir;
 
@@ -183,6 +183,41 @@ impl Context {
                     None
                 }
             })
+    }
+
+    /// Get the resource corresponding to a single source file. `path` must be
+    /// absolute.
+    pub fn resource_for_file(&self, path: &Path) -> Option<Resource> {
+        // TODO needs some cleanup. also, do we really need this? this kinda
+        // seems like a fancy no-op; we just back the path we put in...
+        assert!(path.is_absolute());
+
+        // Check that we're inside the source directory.
+        let abs_src_dir = path::absolute(&self.src_dir).unwrap();
+        if let Ok(rel_path) = path.strip_prefix(&abs_src_dir) {
+            // Check that we're not ignoring anything in the path.
+            for comp in rel_path.components() {
+                match comp {
+                    Component::Normal(c) if ignore_filename(c) => return None,
+                    _ => (),
+                }
+            }
+
+            // Map directories and files.
+            if path.is_dir() {
+                Some(Resource::Directory(path.into()))
+            } else if path.is_file() {
+                if is_note(path) {
+                    Some(Resource::Note(path.into()))
+                } else {
+                    Some(Resource::Static(path.into()))
+                }
+            } else {
+                None
+            }
+        } else {
+            return None;
+        }
     }
 
     /// Render all resources in a site to a destination directory.
