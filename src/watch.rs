@@ -1,5 +1,6 @@
 use crate::core::Context;
 use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind};
+use std::path::Path;
 use tokio::sync::broadcast;
 
 pub struct Watch {
@@ -7,46 +8,42 @@ pub struct Watch {
     tx: broadcast::Sender<Event>,
 }
 
+// TODO this looks silly, but we have an enum here for possible future
+// extensibility (only reloading one page instead of all of them)
 #[derive(Debug, Clone)]
 pub enum Event {
-    One(String),
-    All,
+    Reload,
 }
 
 impl Watch {
-    pub fn new(ctx: Context) -> Self {
+    pub fn new(path: &Path) -> Self {
         let (tx, _) = broadcast::channel(16);
         let foo = tx.clone();
-        let src_dir = ctx.src_dir.clone();
 
         let mut watcher = RecommendedWatcher::new(
             move |res: notify::Result<notify::Event>| {
                 match res {
                     Ok(event) => {
                         eprintln!("event: {:?}", event);
-                        match event.kind {
-                            EventKind::Modify(ModifyKind::Data(_)) => {
-                                for path in event.paths.iter() {
-                                    dbg!(path);
-                                    dbg!(ctx.resource_for_file(&path));
-                                }
+                        if let EventKind::Modify(ModifyKind::Data(_)) = event.kind {
+                            for path in event.paths.iter() {
+                                // TODO check if it's ignored
+                                dbg!(path);
                             }
-                            _ => (),
                         }
-                        match tx.send(Event::All) {
+                        match tx.send(Event::Reload) {
                             Ok(_) => (),
                             Err(e) => eprintln!("channel send error: {e}"),
                         }
                     }
                     Err(error) => eprintln!("error: {}", error),
                 };
-                ()
             },
             Config::default(),
         )
         .unwrap();
 
-        watcher.watch(&src_dir, RecursiveMode::Recursive).unwrap();
+        watcher.watch(&path, RecursiveMode::Recursive).unwrap();
 
         Self { watcher, tx: foo }
     }
@@ -54,7 +51,7 @@ impl Watch {
 
 #[tokio::main]
 pub async fn blarg(ctx: Context) {
-    let watch = Watch::new(ctx);
+    let watch = Watch::new(&ctx.src_dir);
 
     let mut rx = watch.tx.subscribe();
     tokio::spawn(async move {
