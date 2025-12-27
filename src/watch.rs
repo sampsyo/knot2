@@ -54,11 +54,11 @@ fn ignore_path(base: &Path, path: &Path) -> bool {
         Err(_) => return true,
     };
     for comp in frag.components() {
-        if let Component::Normal(name) = comp {
-            if crate::core::ignore_filename(name) {
-                return true;
-            }
+        if let Component::Normal(name) = comp
+            && crate::core::ignore_filename(name)
+        {
+            return true;
         }
     }
-    return false;
+    false
 }
