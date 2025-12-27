@@ -1,4 +1,3 @@
-use crate::core::Context;
 use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind};
 use std::path::Path;
 use tokio::sync::broadcast;
@@ -31,6 +30,7 @@ impl Watch {
                                 dbg!(path);
                             }
                         }
+                        // TODO debounce
                         match tx.send(Event::Reload) {
                             Ok(_) => (),
                             Err(e) => eprintln!("channel send error: {e}"),
@@ -43,24 +43,8 @@ impl Watch {
         )
         .unwrap();
 
-        watcher.watch(&path, RecursiveMode::Recursive).unwrap();
+        watcher.watch(path, RecursiveMode::Recursive).unwrap();
 
         Self { watcher, channel }
     }
-}
-
-#[tokio::main]
-pub async fn blarg(ctx: Context) {
-    let watch = Watch::new(&ctx.src_dir);
-
-    let mut rx = watch.channel.subscribe();
-    tokio::spawn(async move {
-        loop {
-            let event = rx.recv().await.unwrap();
-            // TODO this should do something useful, such as actually rebuild the site
-            dbg!(event);
-        }
-    })
-    .await
-    .unwrap();
 }

@@ -31,7 +31,6 @@ enum Command {
     Show(ShowCommand),
     List(ListCommand),
     Serve(ServeCommand),
-    Watch(WatchCommand),
 }
 
 #[derive(FromArgs)]
@@ -58,11 +57,6 @@ struct ListCommand {}
 #[argh(subcommand, name = "serve")]
 struct ServeCommand {}
 
-#[derive(FromArgs)]
-/// watch some paths (TK demo)
-#[argh(subcommand, name = "watch")]
-struct WatchCommand {}
-
 fn main() {
     let args: Knot2 = argh::from_env();
     let ctx = Context::new(&args.source, matches!(args.mode, Command::Serve(_)));
@@ -88,9 +82,6 @@ fn main() {
         }
         Command::Serve(_) => {
             serve::serve(ctx);
-        }
-        Command::Watch(_) => {
-            watch::blarg(ctx);
         }
     }
 }
