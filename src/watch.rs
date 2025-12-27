@@ -1,11 +1,8 @@
-use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind};
-use std::path::{Component, Path};
+use notify::{
+    Config, EventHandler, EventKind, RecommendedWatcher, RecursiveMode, Watcher, event::ModifyKind,
+};
+use std::path::{Component, Path, PathBuf};
 use tokio::sync::broadcast;
-
-pub struct Watch {
-    pub watcher: RecommendedWatcher,
-    pub channel: broadcast::Sender<Event>,
-}
 
 // TODO this looks silly, but we have an enum here for possible future
 // extensibility (only reloading one page instead of all of them)
@@ -14,33 +11,37 @@ pub enum Event {
     Reload,
 }
 
-impl Watch {
-    pub fn new(path: &Path) -> Self {
-        let (tx, _) = broadcast::channel(16);
+pub struct Handler {
+    pub base: PathBuf,
+    pub channel: broadcast::Sender<Event>,
+}
 
-        // TODO are these clones really necessary?
-        let channel = tx.clone();
-        let base = std::path::absolute(path).expect("need absolute base path");
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<notify::Event>| {
-                if let Ok(event) = res
-                    && let EventKind::Modify(ModifyKind::Data(_)) = event.kind
-                    && !event.paths.iter().any(|p| ignore_path(&base, p))
-                {
-                    // TODO debounce
-                    // We ignore errors when sending events: it's OK to
-                    // silently drop messages when there are no subscribers.
-                    let _ = tx.send(Event::Reload);
-                }
-            },
-            Config::default(),
-        )
-        .unwrap();
-
-        watcher.watch(path, RecursiveMode::Recursive).unwrap();
-
-        Self { watcher, channel }
+impl EventHandler for Handler {
+    fn handle_event(&mut self, res: notify::Result<notify::Event>) {
+        if let Ok(event) = res
+            && let EventKind::Modify(ModifyKind::Data(_)) = event.kind
+            && !event.paths.iter().any(|p| ignore_path(&self.base, p))
+        {
+            // TODO debounce
+            // We ignore errors when sending events: it's OK to
+            // silently drop messages when there are no subscribers.
+            let _ = self.channel.send(Event::Reload);
+        }
     }
+}
+
+pub fn watch(path: &Path) -> (RecommendedWatcher, broadcast::Sender<Event>) {
+    let (tx, _) = broadcast::channel(16);
+
+    let handler = Handler {
+        base: std::path::absolute(path).expect("need absolute base path"),
+        channel: tx.clone(),
+    };
+    let mut watcher = RecommendedWatcher::new(handler, Config::default()).unwrap();
+
+    watcher.watch(path, RecursiveMode::Recursive).unwrap();
+
+    (watcher, tx)
 }
 
 /// Check whether we should ignore a given path inside of a base directory.
