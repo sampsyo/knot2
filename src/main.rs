@@ -1,5 +1,6 @@
 pub mod assets;
 pub mod core;
+pub mod git;
 pub mod markdown;
 pub mod serve;
 pub mod watch;
