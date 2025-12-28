@@ -1,4 +1,3 @@
-use crate::core::Context;
 use std::path::Path;
 use std::process::Command;
 
@@ -49,9 +48,4 @@ pub fn last_commit(repo: &Path, file: &Path) -> Option<CommitData> {
     } else {
         Some(CommitData(output.stdout))
     }
-}
-
-pub fn blarg(ctx: Context) {
-    let commit = last_commit(&ctx.src_dir, Path::new("Cargo.toml")).unwrap();
-    dbg!(commit.info());
 }

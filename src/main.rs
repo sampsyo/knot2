@@ -32,7 +32,6 @@ enum Command {
     Show(ShowCommand),
     List(ListCommand),
     Serve(ServeCommand),
-    Status(StatusCommand),
 }
 
 #[derive(FromArgs)]
@@ -59,11 +58,6 @@ struct ListCommand {}
 #[argh(subcommand, name = "serve")]
 struct ServeCommand {}
 
-#[derive(FromArgs)]
-/// show note status from git
-#[argh(subcommand, name = "status")]
-struct StatusCommand {}
-
 fn main() {
     let args: Knot2 = argh::from_env();
     let ctx = Context::new(&args.source, matches!(args.mode, Command::Serve(_)));
@@ -89,9 +83,6 @@ fn main() {
         }
         Command::Serve(_) => {
             serve::serve(ctx);
-        }
-        Command::Status(_) => {
-            git::blarg(ctx);
         }
     }
 }
