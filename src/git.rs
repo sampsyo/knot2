@@ -28,8 +28,8 @@ impl CommitData {
     }
 }
 
-pub fn last_commit(repo: &Path, file: &Path) -> std::io::Result<CommitData> {
-    let stdout = Command::new("git")
+pub fn last_commit(repo: &Path, file: &Path) -> Option<CommitData> {
+    let output = Command::new("git")
         .current_dir(repo)
         .args([
             "log",
@@ -38,10 +38,17 @@ pub fn last_commit(repo: &Path, file: &Path) -> std::io::Result<CommitData> {
             "--",
             file.to_str().expect("path must be UTF-8"),
         ])
-        .output()?
-        .stdout;
+        .output()
+        .ok()?;
+
     // TODO check exit status?
-    Ok(CommitData(stdout))
+
+    if output.stdout.is_empty() {
+        // Untracked file.
+        None
+    } else {
+        Some(CommitData(output.stdout))
+    }
 }
 
 pub fn blarg(ctx: Context) {

@@ -79,7 +79,7 @@ impl Context {
             .collect();
 
         // Get git commit info.
-        let commit = git::last_commit(&self.src_dir, src_path).ok().map(|c| {
+        let commit = git::last_commit(&self.src_dir, src_path).map(|c| {
             let info = c.info();
             minijinja::context! {
                 hash => info.hash,
