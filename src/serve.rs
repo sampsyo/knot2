@@ -11,19 +11,23 @@ use axum::{
 use axum_extra::body::AsyncReadBody;
 use std::convert::Infallible;
 use std::path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tokio::fs;
 use tokio_stream::{Stream, StreamExt};
 
+#[derive(Clone)]
 struct AppState {
-    ctx: Context,
-    watch: Watch,
+    ctx: Arc<RwLock<Context>>,
+    watch: Arc<Watch>,
 }
 
 #[tokio::main]
 pub async fn serve(ctx: Context) {
     let watch = Watch::new(&ctx.src_dir);
-    let state = Arc::new(AppState { ctx, watch });
+    let state = AppState {
+        ctx: Arc::new(RwLock::new(ctx)),
+        watch: Arc::new(watch),
+    };
     let app = Router::new()
         .route("/_notify", get(notify))
         .route("/{*path}", get(resource))
@@ -52,16 +56,26 @@ async fn send_file(path: &path::Path) -> Result<Response, (StatusCode, String)> 
 }
 
 /// Serve a resource from the site.
+#[axum::debug_handler]
 async fn resource(
-    State(state): State<Arc<AppState>>,
+    State(state): State<AppState>,
     Path(path): Path<String>,
 ) -> Result<Response, (StatusCode, String)> {
-    let ctx = &state.ctx;
     eprintln!("GET {path}");
-    match ctx.resolve_resource(&path) {
+
+    let rsrc = {
+        let ctx = &mut state.ctx.read().unwrap();
+        ctx.resolve_resource(&path)
+    };
+    match rsrc {
         Some(Resource::Note(src_path)) => {
+            // In debug mode, reload templates before rendering.
+            #[cfg(debug_assertions)]
+            state.ctx.write().unwrap().reload_templates();
+
+            // Render and send the note.
             let mut buf: Vec<u8> = vec![];
-            match ctx.render_note(&src_path, &mut buf) {
+            match state.ctx.read().unwrap().render_note(&src_path, &mut buf) {
                 Ok(()) => Ok(Html(buf).into_response()),
                 Err(e) => Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -80,7 +94,7 @@ async fn resource(
 
 /// Server-Sent Events endpoint for getting change notifications.
 async fn notify(
-    State(state): State<Arc<AppState>>,
+    State(state): State<AppState>,
 ) -> sse::Sse<impl Stream<Item = Result<sse::Event, Infallible>>> {
     let stream = state.watch.stream().map(|_| {
         eprintln!("sending reload event");
