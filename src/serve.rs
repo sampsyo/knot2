@@ -62,7 +62,6 @@ async fn send_file(path: &path::Path) -> Result<Response, (StatusCode, String)> 
 }
 
 /// Serve a resource from the site.
-#[axum::debug_handler]
 async fn resource(
     State(state): State<AppState>,
     Path(path): Path<String>,
