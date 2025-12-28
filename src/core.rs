@@ -20,27 +20,34 @@ pub struct Context {
 
 impl Context {
     pub fn new(src_dir: &str, livereload: bool) -> Self {
-        let mut env = minijinja::Environment::new();
+        let mut ctx = Self {
+            src_dir: src_dir.into(),
+            tmpls: minijinja::Environment::new(),
+            livereload,
+        };
 
         // Register embedded templates, which are available in release mode.
+        #[cfg(not(debug_assertions))]
         for (name, source) in TEMPLATES.contents() {
-            env.add_template(name, source)
-                .expect("embedded template must be valid Jinja code");
+            ctx.tmpls
+                .add_template(name, source)
+                .expect("error in embedded template");
         }
 
         // In debug mode only, load templates directly from the filesystem.
         #[cfg(debug_assertions)]
-        env.set_loader(|name| {
-            match TEMPLATES.read(name) {
-                Ok(source) => Ok(source),
-                Err(_) => Ok(None), // TODO maybe propagate error
-            }
-        });
+        ctx.reload_templates();
 
-        Self {
-            src_dir: src_dir.into(),
-            tmpls: env,
-            livereload,
+        ctx
+    }
+
+    /// Re-read all templates from the filesystem.
+    pub fn reload_templates(&mut self) {
+        self.tmpls.clear_templates();
+        for (name, source) in TEMPLATES.read_all() {
+            self.tmpls
+                .add_template_owned(name, source.expect("error reading template"))
+                .expect("error in loaded template");
         }
     }
 
