@@ -83,6 +83,7 @@ impl Context {
             let info = c.info();
             minijinja::context! {
                 hash => info.hash,
+                short_hash => info.hash[..7],
                 date => info.date,
                 email => info.email,
                 name => info.name,

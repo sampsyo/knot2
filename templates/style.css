@@ -8,7 +8,7 @@ body {
 
   --theme-color: rgb(179, 27, 27);
   --faded-color: #666;
-  --faded-theme-color: #ccc;
+  --more-faded-color: #ccc;
 }
 
 main {
@@ -73,38 +73,60 @@ nav {
     padding-left: 0;
     position: sticky;
     top: 1rem;
+
+    li {
+      list-style: none;
+      padding-left: 0;
+      margin: 0.4rem 0;
+
+      a:link {
+        color: inherit;
+        text-decoration: none;
+      }
+      a:visited {
+        color: inherit;
+      }
+      a:hover {
+        color: var(--more-faded-color);
+      }
+
+      &[data-level="2"] {
+        padding-left: 0.5rem;
+      }
+      &[data-level="3"] {
+        padding-left: 1rem;
+      }
+      &[data-level="4"] {
+        padding-left: 1.5rem;
+      }
+      &[data-level="5"] {
+        padding-left: 2rem;
+      }
+      &[data-level="6"] {
+        padding-left: 2.5rem;
+      }
+    }
   }
 
-  li {
-    list-style: none;
-    padding-left: 0;
-    margin: 0.4rem 0;
+  dl {
+    display: grid;
+    grid-template-columns: max-content;
+    gap: 0.2rem 0.5rem;
 
-    a:link {
-      color: inherit;
-      text-decoration: none;
-    }
-    a:visited {
-      color: inherit;
-    }
-    a:hover {
-      color: var(--faded-theme-color);
+    dt {
+      grid-column: 1;
+      text-align: right;
+      color: var(--more-faded-color);
+      font-weight: bold;
     }
 
-    &[data-level="2"] {
-      padding-left: 0.5rem;
-    }
-    &[data-level="3"] {
-      padding-left: 1rem;
-    }
-    &[data-level="4"] {
-      padding-left: 1.5rem;
-    }
-    &[data-level="5"] {
-      padding-left: 2rem;
-    }
-    &[data-level="6"] {
-      padding-left: 2.5rem;
+    dd {
+      grid-column: 2;
+      margin: 0;
+
+      &.commit {
+        font-family: monospace;
+      }
     }
   }
 }
@@ -132,6 +154,6 @@ nav {
     color: white;
     --theme-color: rgb(218, 60, 63);
     --faded-color: #aaa;
-    --faded-theme-color: #eee;
+    --more-faded-color: #eee;
   }
 }

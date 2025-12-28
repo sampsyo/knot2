@@ -14,7 +14,16 @@
     </head>
     <body>
         <nav>
-            {{ git }}
+            {% if git %}
+            <dl>
+                <dt>last edit</dt>
+                <dd class="date">{{git.date}}</dd>
+                <dt>by</dt>
+                <dd class="author" title="{{git.email}}">{{git.name}}</dd>
+                <dt>commit</dt>
+                <dd class="commit" title="{{git.hash}}">{{git.short_hash}}</dd>
+            </dl>
+            {% endif %}
             <ul>
                 {%- for entry in toc %}
                 <li data-level="{{entry.level}}">
