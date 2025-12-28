@@ -28,7 +28,7 @@ impl CommitData {
     }
 }
 
-pub fn last_commit(repo: &Path, file: &Path) -> CommitData {
+pub fn last_commit(repo: &Path, file: &Path) -> std::io::Result<CommitData> {
     let stdout = Command::new("git")
         .current_dir(repo)
         .args([
@@ -38,13 +38,13 @@ pub fn last_commit(repo: &Path, file: &Path) -> CommitData {
             "--",
             file.to_str().expect("path must be UTF-8"),
         ])
-        .output()
-        .expect("git failed")
+        .output()?
         .stdout;
-    CommitData(stdout)
+    // TODO check exit status?
+    Ok(CommitData(stdout))
 }
 
 pub fn blarg(ctx: Context) {
-    let commit = last_commit(&ctx.src_dir, Path::new("Cargo.toml"));
+    let commit = last_commit(&ctx.src_dir, Path::new("Cargo.toml")).unwrap();
     dbg!(commit.info());
 }
