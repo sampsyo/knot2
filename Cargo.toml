@@ -9,6 +9,8 @@ minijinja = { version = "2.12", features = ["loader"] }
 pulldown-cmark = "0.13.0"
 walkdir = "2"
 argh = "0.1"
+toml = "0.9"
+serde = { version = "1", features = ["derive"] }
 
 # For the server.
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }

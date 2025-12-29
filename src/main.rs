@@ -6,7 +6,7 @@ pub mod serve;
 pub mod watch;
 
 use argh::FromArgs;
-use core::Context;
+use core::{Config, Context};
 use std::io;
 use std::path::Path;
 
@@ -60,7 +60,8 @@ struct ServeCommand {}
 
 fn main() {
     let args: Knot2 = argh::from_env();
-    let ctx = Context::new(&args.source, matches!(args.mode, Command::Serve(_)));
+    let config = Config::load(Path::new(&args.source)).unwrap();
+    let ctx = Context::new(&args.source, matches!(args.mode, Command::Serve(_)), config);
     match args.mode {
         Command::Build(_) => {
             let dest_path = Path::new(&args.dest);
