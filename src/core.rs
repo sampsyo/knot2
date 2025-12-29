@@ -1,6 +1,7 @@
 use crate::assets::assets;
 use crate::{git, markdown};
 use anyhow::Result;
+use serde::Deserialize;
 use std::ffi::OsStr;
 use std::path::{Component, Path, PathBuf};
 use std::{fs, io};
@@ -15,15 +16,17 @@ assets!(
 pub struct Context {
     pub src_dir: PathBuf,
     pub livereload: bool,
+    pub config: Config,
     tmpls: minijinja::Environment<'static>,
 }
 
 impl Context {
-    pub fn new(src_dir: &str, livereload: bool) -> Self {
+    pub fn new(src_dir: &str, livereload: bool, config: Config) -> Self {
         let mut ctx = Self {
             src_dir: src_dir.into(),
             tmpls: minijinja::Environment::new(),
             livereload,
+            config,
         };
 
         // Register embedded templates, which are available in release mode.
@@ -90,6 +93,18 @@ impl Context {
             }
         });
 
+        // Filename info.
+        let rel_path = src_path
+            .strip_prefix(&self.src_dir)
+            .expect("note path must be within source directory")
+            .to_string_lossy();
+        let file_name = src_path.file_name().expect("no filename").to_string_lossy();
+        let edit_link = self
+            .config
+            .edit_link_prefix
+            .as_ref()
+            .map(|p| format!("{p}{rel_path}"));
+
         // Render the template.
         let tmpl = self.tmpls.get_template("note.html")?;
         tmpl.render_to_write(
@@ -99,6 +114,9 @@ impl Context {
                 toc => toc,
                 livereload => self.livereload,
                 git => commit,
+                path => rel_path,
+                name => file_name,
+                edit_link => edit_link,
             },
             dest,
         )?;
@@ -304,6 +322,22 @@ fn sanitize_path(path: &str) -> Option<PathBuf> {
     }
 
     Some(path_buf)
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Config {
+    edit_link_prefix: Option<String>,
+}
+
+impl Config {
+    pub fn load(src_dir: &Path) -> Result<Self> {
+        match fs::read_to_string(src_dir.join("_config.toml")) {
+            // Silently proceed if the file isn't found, but crash on other errors.
+            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
+            Err(e) => Err(e)?,
+            Ok(s) => Ok(toml::from_str(&s)?),
+        }
+    }
 }
 
 #[cfg(test)]

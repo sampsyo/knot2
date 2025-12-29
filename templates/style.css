@@ -12,6 +12,7 @@ body {
   --mono-font:
     ui-monospace, SF Mono, "Anonymous Pro", Inconsolata, Consolas,
     "Source Code Pro", Menlo, Monaco, monospace;
+  --mono-size: 13.5px;
 }
 
 main {
@@ -39,7 +40,7 @@ main {
   pre,
   code {
     font-family: var(--mono-font);
-    font-size: 14px;
+    font-size: var(--mono-size);
   }
   code {
     background: rgba(175, 184, 193, 0.2);
@@ -111,6 +112,18 @@ nav {
     grid-template-columns: max-content;
     gap: 0.2rem 0.5rem;
 
+    a:link {
+      color: inherit;
+      text-decoration: none;
+    }
+    a:visited {
+      color: inherit;
+    }
+    a:hover {
+      color: var(--theme-color);
+      text-decoration: underline;
+    }
+
     dt {
       grid-column: 1;
       text-align: right;
@@ -122,8 +135,10 @@ nav {
       grid-column: 2;
       margin: 0;
 
-      &.commit {
+      &.commit,
+      &.path {
         font-family: var(--mono-font);
+        font-size: var(--mono-size);
       }
     }
   }
