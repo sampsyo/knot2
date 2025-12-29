@@ -93,6 +93,18 @@ impl Context {
             }
         });
 
+        // Filename info.
+        let rel_path = src_path
+            .strip_prefix(&self.src_dir)
+            .expect("note path must be within source directory")
+            .to_string_lossy();
+        let file_name = src_path.file_name().expect("no filename").to_string_lossy();
+        let edit_link = self
+            .config
+            .edit_link_prefix
+            .as_ref()
+            .map(|p| format!("{p}{rel_path}"));
+
         // Render the template.
         let tmpl = self.tmpls.get_template("note.html")?;
         tmpl.render_to_write(
@@ -102,6 +114,9 @@ impl Context {
                 toc => toc,
                 livereload => self.livereload,
                 git => commit,
+                path => rel_path,
+                name => file_name,
+                edit_link => edit_link,
             },
             dest,
         )?;
