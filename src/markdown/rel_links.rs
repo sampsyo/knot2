@@ -10,7 +10,7 @@ where
     iter: I,
 }
 
-impl<'a, 'b, I> RewriteRelativeLinks<'a, I>
+impl<'a, I> RewriteRelativeLinks<'a, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
@@ -19,7 +19,7 @@ where
     }
 }
 
-impl<'a, 'b, I> Iterator for RewriteRelativeLinks<'a, I>
+impl<'a, I> Iterator for RewriteRelativeLinks<'a, I>
 where
     I: Iterator<Item = Event<'a>>,
 {
@@ -56,10 +56,7 @@ fn is_absolute_url(url: &str) -> bool {
     let slash = url.find('/');
     match (colon, slash) {
         (Some(c), Some(s)) if c < s => true,
-        (_, Some(s)) => match url.find("//") {
-            Some(ss) if ss <= s => true,
-            _ => false,
-        },
+        (_, Some(s)) => matches!(url.find("//"), Some(ss) if ss <= s),
         (_, _) => false,
     }
 }
@@ -68,7 +65,7 @@ fn is_absolute_url(url: &str) -> bool {
 /// return the path unchanged.
 fn rewrite_url(url: CowStr) -> CowStr {
     match url.rsplit_once(".") {
-        Some((base, ext)) if ext == "md" => format!("{base}.html").into(),
+        Some((base, "md")) => format!("{base}.html").into(),
         _ => url,
     }
 }
