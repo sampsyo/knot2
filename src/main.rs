@@ -2,6 +2,7 @@ pub mod assets;
 pub mod core;
 pub mod git;
 pub mod markdown;
+pub mod parallel;
 pub mod serve;
 pub mod watch;
 
