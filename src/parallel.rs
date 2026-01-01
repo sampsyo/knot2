@@ -1,4 +1,5 @@
 use crossbeam_channel::{Sender, bounded};
+use std::num::NonZero;
 use std::{marker::PhantomData, thread};
 
 /// Create a thread pool and provide it to a scope that can spawn work.
@@ -10,8 +11,20 @@ where
     F: FnOnce() + Send + 'scope,
     B: (Fn(ThreadPool<F>) -> R) + 'scope,
 {
-    let threads = thread::available_parallelism()
-        .map(|n| n.into())
+    scope_with_threads(None, body_fn)
+}
+
+/// Create a thread pool with an optionally specified number of threads.
+///
+/// Like `scope` but with a specific number of threads.
+pub fn scope_with_threads<'scope, F, B, R>(thread_count: Option<NonZero<usize>>, body_fn: B) -> R
+where
+    F: FnOnce() + Send + 'scope,
+    B: (Fn(ThreadPool<F>) -> R) + 'scope,
+{
+    let threads = thread_count
+        .or_else(|| thread::available_parallelism().ok())
+        .map(|n| n.get())
         .unwrap_or(1);
     scope_with_sizes(threads, threads * 2, body_fn)
 }
@@ -24,6 +37,9 @@ where
     F: FnOnce() + Send + 'scope,
     B: (Fn(ThreadPool<F>) -> R) + 'scope,
 {
+    assert!(thread_count > 0);
+    assert!(chan_size > 0);
+
     thread::scope(|s| {
         let (tx, rx) = bounded::<F>(chan_size);
 

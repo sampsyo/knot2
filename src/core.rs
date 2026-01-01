@@ -3,6 +3,7 @@ use crate::{git, markdown, parallel};
 use anyhow::Result;
 use serde::Deserialize;
 use std::ffi::OsStr;
+use std::num::NonZero;
 use std::path::{Component, Path, PathBuf};
 use std::{fs, io};
 use walkdir::WalkDir;
@@ -231,8 +232,8 @@ impl Context {
     }
 
     /// Render all resources in a site to a destination directory.
-    pub fn render_site(&self, dest_dir: &Path) -> Result<()> {
-        parallel::scope(|pool| {
+    pub fn render_site(&self, threads: Option<NonZero<usize>>, dest_dir: &Path) -> Result<()> {
+        parallel::scope_with_threads(threads, |pool| {
             remove_dir_force(dest_dir)?;
 
             for rsrc in self.read_resources() {
