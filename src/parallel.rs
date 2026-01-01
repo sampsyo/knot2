@@ -1,12 +1,24 @@
 use crossbeam_channel::{Sender, bounded};
 use std::thread;
 
-pub struct WorkPool<T: Send + 'static> {
-    tx: Sender<T>,
+pub fn work_pool<'scope, T, W, B>(work_fn: W, body_fn: B)
+where
+    T: Send + 'static,
+    W: Fn(T) + Send + Clone + 'scope,
+    B: Fn(WorkPool<T>) + 'scope,
+{
+    let threads = thread::available_parallelism()
+        .map(|n| n.into())
+        .unwrap_or(1);
+    work_pool_with_sizes(threads, threads * 2, work_fn, body_fn)
 }
 
-pub fn run_pool<'scope, T, W, B>(thread_count: usize, chan_size: usize, work_fn: W, body_fn: B)
-where
+pub fn work_pool_with_sizes<'scope, T, W, B>(
+    thread_count: usize,
+    chan_size: usize,
+    work_fn: W,
+    body_fn: B,
+) where
     T: Send + 'static,
     W: Fn(T) + Send + Clone + 'scope,
     B: Fn(WorkPool<T>) + 'scope,
@@ -26,6 +38,10 @@ where
 
         body_fn(WorkPool { tx });
     });
+}
+
+pub struct WorkPool<T: Send + 'static> {
+    tx: Sender<T>,
 }
 
 impl<T: Send + 'static> WorkPool<T> {
@@ -54,13 +70,10 @@ mod tests {
         let results = HashMap::<u64, bool>::new();
         let res_lock = Arc::new(Mutex::new(results));
 
-        run_pool(
-            8,
-            32,
+        work_pool(
             |i| {
                 let p = is_prime(i);
-                let mut r = res_lock.lock().unwrap();
-                r.insert(i, p);
+                res_lock.lock().unwrap().insert(i, p);
             },
             |pool| {
                 pool.send(5);
