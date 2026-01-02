@@ -22,7 +22,7 @@ struct Memoize {
     /// source directory
     source: String,
 
-    #[argh(option, default = "String::from(\"_public\")")]
+    #[argh(option, default = "String::from(\"_site\")")]
     /// destination directory
     dest: String,
 }

@@ -42,7 +42,7 @@ Render Your Notes
 -----------------
 
 Go to your directory with your Markdown notes and type `memoize build`.
-You'll now have a `_public` directory with all your rendered notes.
+You'll now have a `_site` directory with all your rendered notes.
 
 Here are some things to know about the generated site:
 
@@ -50,6 +50,14 @@ Here are some things to know about the generated site:
 * Non-Markdown files (e.g., images) get copied as-is. (Actually, we use hard links when we can.)
 * The generated site mirrors the subdirectory structure of the source directory, so go ahead and organize notes into a hierarchy if you like.
 * Filenames that start with `.` and `_` are excluded.
+
+Configuration
+-------------
+
+You can optionally include a `_config.toml` in your source directory.
+There is currently only one configuration option:
+
+* `edit_link_prefix`: A URL prefix to use to generate "edit" links on each page. Use this if your git forge has a way to edit files in your browser. Memoize will append the relative path to a given note, relative to the repository root. For GitHub, for instance, set this to something like `"https://github.com/<user>/<repo>/edit/main/"`.
 
 Preview Server
 --------------
