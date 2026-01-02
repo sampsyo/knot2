@@ -338,27 +338,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
-name = "knot2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "argh",
- "axum",
- "axum-extra",
- "crossbeam-channel",
- "mime_guess",
- "minijinja",
- "notify",
- "pulldown-cmark",
- "serde",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "toml",
- "walkdir",
-]
-
-[[package]]
 name = "kqueue"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -407,6 +386,27 @@ name = "memo-map"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38d1115007560874e373613744c6fba374c17688327a71c1476d1a5954cc857b"
+
+[[package]]
+name = "memoize"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "argh",
+ "axum",
+ "axum-extra",
+ "crossbeam-channel",
+ "mime_guess",
+ "minijinja",
+ "notify",
+ "pulldown-cmark",
+ "serde",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "toml",
+ "walkdir",
+]
 
 [[package]]
 name = "mime"

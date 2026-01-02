@@ -14,7 +14,7 @@ use std::path::Path;
 
 #[derive(FromArgs)]
 /// a static knowledge base
-struct Knot2 {
+struct Memoize {
     #[argh(subcommand)]
     mode: Command,
 
@@ -65,7 +65,7 @@ struct ListCommand {}
 struct ServeCommand {}
 
 fn main() {
-    let args: Knot2 = argh::from_env();
+    let args: Memoize = argh::from_env();
     let config = Config::load(Path::new(&args.source)).unwrap();
     let ctx = Context::new(&args.source, matches!(args.mode, Command::Serve(_)), config);
     match args.mode {
