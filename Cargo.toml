@@ -2,7 +2,7 @@
 name = "memoize"
 version = "0.1.0"
 edition = "2024"
-repository = "https://codeberg.org/samps/memoize"
+repository = "https://github.com/sampsyo/memoize"
 description = "static rendering for a Markdown knowledge base"
 readme = "README.md"
 license = "MIT"
